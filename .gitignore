@@ -4,4 +4,7 @@ node_modules
 .vscode-test/
 *.vsix
 .env
+.vscode-test.mjs
+vsc-extension-quickstart*
+
 
