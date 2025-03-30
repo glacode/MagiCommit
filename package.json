@@ -4,7 +4,7 @@
   "description": "AI based commit message generator",
   "icon": "images/wand-icon.png",
   "version": "0.0.1",
-	"publisher": "glacode",
+  "publisher": "glacode",
   "author": "Glauco Siliprandi",
   "license": "MIT",
   "engines": {
@@ -16,12 +16,53 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "menus": {
+      "scm/title": [
+        {
+          "command": "magicommit.generate",
+          "group": "navigation@-1",
+          "when": "scmProvider == git"
+        }
+      ],
+      "scm/resourceGroup/context": [
+        {
+          "command": "magicommit.generate",
+          "group": "inline",
+          "when": "scmProvider == git"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "magicommit.helloWorld",
         "title": "Hello Magic Commit"
+      },
+      {
+        "command": "magicommit.generate",
+        "title": "Generate Commit Message with MagiCommit",
+        "icon": {
+          "light": "resources/light/wand.svg",
+          "dark": "resources/dark/wand.svg"
+        }
       }
-    ]
+    ],
+    "configuration": {
+      "title": "MagiCommit",
+      "properties": {
+        "magicommit.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Google Gemini API key (get it from https://ai.google.dev/)",
+          "scope": "application"
+        },
+        "magicommit.maxDiffLength": {
+          "type": "number",
+          "default": 2000,
+          "description": "Maximum characters of git diff to send to Gemini",
+          "scope": "application"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -39,16 +80,20 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.98.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.98.0",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
-    "eslint": "^9.23.0",
-    "esbuild": "^0.25.1",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.8.2",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.25.1",
+    "eslint": "^9.23.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "simple-git": "^3.27.0"
   }
 }

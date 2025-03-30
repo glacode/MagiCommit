@@ -1,26 +1,79 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import simpleGit, { SimpleGit } from 'simple-git';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+    const generateCommitMessage = vscode.commands.registerCommand('magicommit.generate', async () => {
+        try {
+            // Get workspace path
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage("No workspace folder open");
+                return;
+            }
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "magicommit" is now active!');
+            // Initialize git with explicit path
+            const git: SimpleGit = simpleGit(workspaceFolder.uri.fsPath);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('magicommit.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from MagiCommit!');
-	});
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "🧙♂️ MagiCommit is working...",
+                cancellable: false
+            }, async (progress) => {
+                // Verify Git repository
+                const isRepo = await git.checkIsRepo();
+                if (!isRepo) {
+                    throw new Error("Not a Git repository");
+                }
 
-	context.subscriptions.push(disposable);
+                // Get staged changes
+                const diff = await git.diff(['--cached', 'HEAD']);
+                if (!diff.trim()) {
+                    throw new Error("No staged changes detected");
+                }
+
+                // Get recent commit history
+                const log = (await git.log({ n: 5 })).all.map(c => c.message).join('\n');
+
+                // Get API configuration
+                const config = vscode.workspace.getConfiguration('magicommit');
+                const apiKey = config.get<string>('geminiApiKey');
+                if (!apiKey) {
+                    throw new Error("Missing Gemini API key in settings");
+                }
+
+                // Initialize Gemini AI
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+                // Build prompt
+                const prompt = `Generate a conventional commit message based on:
+Staged changes:
+${diff.substring(0, 2000)}
+
+Recent commits:
+${log.substring(0, 1000)}
+
+Format: "type(scope): description" (50 chars max summary)
+Common types: feat, fix, docs, style, refactor, test, chore`;
+
+                // Generate commit message
+                progress.report({ message: "Consulting the AI spirits..." });
+                const result = await model.generateContent(prompt);
+                const message = result.response.text().trim();
+
+                // Insert into commit input
+                await vscode.commands.executeCommand('workbench.view.scm');
+                await vscode.commands.executeCommand('git.commit', message);
+                
+                vscode.window.showInformationMessage('✨ Commit message generated!');
+            });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            vscode.window.showErrorMessage(`🔮 MagiCommit failed: ${errorMessage}`);
+            console.error('MagiCommit error:', error);
+        }
+    });
+
+    context.subscriptions.push(generateCommitMessage);
 }
-
-// This method is called when your extension is deactivated
-export function deactivate() {}
