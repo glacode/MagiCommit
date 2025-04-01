@@ -59,7 +59,7 @@
           "type": "number",
           "default": 2000,
           "description": "Maximum characters of git diff to send to Gemini",
-          "scope": "application"
+          "scope": "window"
         }
       }
     }
