@@ -2,6 +2,41 @@ import * as vscode from 'vscode';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import simpleGit, { SimpleGit } from 'simple-git';
 
+function buildPrompt(diff: string, log: string): string {
+    const prompt = `Generate a conventional commit message based on:
+Staged changes:
+${diff.substring(0, 2000)}
+Recent commits:
+${log.substring(0, 1000)}
+Format: "type(scope): description" (50 chars max summary)
+Common types: feat, fix, docs, style, refactor, test, chore`;
+    return prompt;
+}
+
+//#region setCommitMessage
+function getGitExtension() {
+    const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+    return gitExtension?.getAPI(1);
+}
+
+async function setCommitMessage(message: string) {
+    const git = getGitExtension();
+    if (!git) {
+        vscode.window.showErrorMessage("Git extension not found.");
+        return;
+    }
+
+    const repo = git.repositories[0]; // Assuming there's at least one repository open
+    if (repo) {
+        repo.inputBox.value = message; // Set the commit message
+    } else {
+        vscode.window.showErrorMessage("No Git repository found.");
+    }
+}
+//#endregion setCommitMessage
+
+
+
 export async function activate(context: vscode.ExtensionContext) {
     const generateCommitMessage = vscode.commands.registerCommand('magicommit.generate', async () => {
         try {
@@ -17,7 +52,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: "🧙♂️ MagiCommit is working...",
+                title: "🧙 MagiCommit is working...",
                 cancellable: false
             }, async (progress) => {
                 // Verify Git repository
@@ -44,28 +79,24 @@ export async function activate(context: vscode.ExtensionContext) {
 
                 // Initialize Gemini AI
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+                const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
                 // Build prompt
-                const prompt = `Generate a conventional commit message based on:
-Staged changes:
-${diff.substring(0, 2000)}
-
-Recent commits:
-${log.substring(0, 1000)}
-
-Format: "type(scope): description" (50 chars max summary)
-Common types: feat, fix, docs, style, refactor, test, chore`;
+                // const prompt = buildPrompt(diff, log);
+                const prompt = `Explain probability in 30 words.`;
 
                 // Generate commit message
                 progress.report({ message: "Consulting the AI spirits..." });
                 const result = await model.generateContent(prompt);
                 const message = result.response.text().trim();
 
+                vscode.window.showInformationMessage(message);
+
                 // Insert into commit input
-                await vscode.commands.executeCommand('workbench.view.scm');
-                await vscode.commands.executeCommand('git.commit', message);
-                
+                // await vscode.commands.executeCommand('workbench.view.scm');
+                // await vscode.commands.executeCommand('git.commit', message);
+                await setCommitMessage(message);
+
                 vscode.window.showInformationMessage('✨ Commit message generated!');
             });
         } catch (error) {
