@@ -6,5 +6,7 @@ node_modules
 .env
 .vscode-test.mjs
 vsc-extension-quickstart*
+src/extension.js
+src/extension.js.map
 
 

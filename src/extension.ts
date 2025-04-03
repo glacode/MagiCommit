@@ -2,13 +2,14 @@ import * as vscode from 'vscode';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import simpleGit, { SimpleGit } from 'simple-git';
 
-function buildPrompt(diff: string, log: string): string {
+function buildPrompt(diff: string, log: string, maxDiffLength: number, maxLogLength: number): string {
     const prompt = `Generate a conventional commit message based on:
 Staged changes:
-${diff.substring(0, 2000)}
+${diff.substring(0, maxDiffLength)}
 Recent commits:
-${log.substring(0, 1000)}
-Format: "type(scope): description" (50 chars max summary)
+${log.substring(0, maxLogLength)}
+
+Commit message format:"type(scope): description" (50 chars max summary)
 Common types: feat, fix, docs, style, refactor, test, chore`;
     return prompt;
 }
@@ -76,25 +77,25 @@ export async function activate(context: vscode.ExtensionContext) {
                 if (!apiKey) {
                     throw new Error("Missing Gemini API key in settings");
                 }
+                const maxDiffLength: number = config.get<number>('maxDiffLength') || 3000;
+                const maxLogLength: number = config.get<number>('maxLogLength') || 3000;
 
                 // Initialize Gemini AI
                 const genAI = new GoogleGenerativeAI(apiKey);
                 const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
                 // Build prompt
-                // const prompt = buildPrompt(diff, log);
-                const prompt = `Explain probability in 30 words.`;
+                const prompt = buildPrompt(diff, log, maxDiffLength, maxLogLength);
+                // const prompt = `Explain probability in 30 words.`;
+                console.log(prompt);
 
                 // Generate commit message
                 progress.report({ message: "Consulting the AI spirits..." });
                 const result = await model.generateContent(prompt);
                 const message = result.response.text().trim();
-
-                vscode.window.showInformationMessage(message);
+                // const message = "test"; // Placeholder for actual AI response
 
                 // Insert into commit input
-                // await vscode.commands.executeCommand('workbench.view.scm');
-                // await vscode.commands.executeCommand('git.commit', message);
                 await setCommitMessage(message);
 
                 vscode.window.showInformationMessage('✨ Commit message generated!');

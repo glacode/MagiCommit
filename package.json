@@ -57,7 +57,13 @@
         },
         "magicommit.maxDiffLength": {
           "type": "number",
-          "default": 2000,
+          "default": 3000,
+          "description": "Maximum characters of git diff to send to Gemini",
+          "scope": "window"
+        },
+        "magicommit.maxLogLength": {
+          "type": "number",
+          "default": 3000,
           "description": "Maximum characters of git diff to send to Gemini",
           "scope": "window"
         }
