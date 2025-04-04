@@ -2,7 +2,7 @@
   "name": "magicommit",
   "displayName": "MagiCommit",
   "description": "AI based commit message generator",
-  "icon": "images/wand-icon.png",
+  "icon": "resources/mage-hat.png",
   "version": "0.0.1",
   "publisher": "glacode",
   "author": "Glauco Siliprandi",

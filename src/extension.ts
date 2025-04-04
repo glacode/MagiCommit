@@ -23,35 +23,27 @@ export async function activate(context: vscode.ExtensionContext) {
     const generateCommitMessage = vscode.commands.registerCommand('magicommit.generate', async () => {
         try {
             // Get workspace path
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (!workspaceFolder) {
-                vscode.window.showErrorMessage("No workspace folder open");
-                return;
-            }
-
-            // Initialize git with explicit path
-            // const git: SimpleGit = simpleGit(workspaceFolder.uri.fsPath);
+            // const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            // if (!workspaceFolder) {
+            //     vscode.window.showErrorMessage("No workspace folder open");
+            //     return;
+            // }
 
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 title: "🧙 MagiCommit is working...",
                 cancellable: false
             }, async (progress) => {
-                // Verify Git repository
                 const workingData: WorkingData = await getWorkingData();
                 if (workingData.isGitRepo && workingData.apiKey.length > 0) {
-                    // Build prompt
                     const prompt = buildPrompt(workingData.diff, workingData.log, workingData.maxDiffLength, workingData.maxLogLength);
-                    // const prompt = `Explain probability in 30 words.`;
                     console.log(prompt);
-
-                    // Generate commit message
-                    const message: string = await generateMessageFromPrompt(prompt, workingData, progress);
-                    // const message = "test"; // Placeholder for actual AI response
+                    const message: string = await generateCommitMessageFromPrompt(prompt, workingData, progress);
+                    // const message = "test";
 
                     // Insert into commit input
-                    await setCommitMessage(message);
-                    console.log("\nGenerated commit message:", message);
+                    await insertCommitMessageInTextbox(message);
+                    // console.log("\nGenerated commit message:", message);
 
                     vscode.window.showInformationMessage('✨ Commit message generated!');
                 }
@@ -73,19 +65,24 @@ export async function activate(context: vscode.ExtensionContext) {
 async function getWorkingData(): Promise<WorkingData> {
     const workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.workspaceFolders?.[0];
     const git: SimpleGit = simpleGit(workspaceFolder?.uri.fsPath || '');
+
     const isGitRepo: boolean = await isGitRepository(git);
-    const diff: string = await git.diff(['--cached', 'HEAD']);
-    if (!diff.trim()) {
-        vscode.window.showErrorMessage("No staged changes detected");
-    }
-    const log = (await git.log({ n: 5 })).all.map(c => c.message).join('\n');
+
+    const diff: string = await getDiff(git);
+
     const config = vscode.workspace.getConfiguration('magicommit');
+
+    const numberOfLogItems: number = config.get<number>('numberOfLogItems') || 5;
+    const log = (await git.log({ n: numberOfLogItems })).all.map(c => c.message).join('\n');
+
     const maxDiffLength: number = config.get<number>('maxDiffLength') || 3000;
     const maxLogLength: number = config.get<number>('maxLogLength') || 3000;
+
     const apiKey: string = config.get<string>('geminiApiKey') || '';
     if (!apiKey) {
         vscode.window.showErrorMessage("Missing Gemini API key in settings");
     }
+
     return {
         workSpaceFolder: workspaceFolder,
         isGitRepo: isGitRepo,
@@ -112,7 +109,7 @@ function getGitExtension() {
     return gitExtension?.getAPI(1);
 }
 
-async function setCommitMessage(message: string) {
+async function insertCommitMessageInTextbox(message: string) {
     const git = getGitExtension();
     if (!git) {
         vscode.window.showErrorMessage("Git extension not found.");
@@ -149,7 +146,7 @@ Write summary and details`;
     return prompt;
 }
 
-async function generateMessageFromPrompt(prompt: string, workingData: WorkingData,
+async function generateCommitMessageFromPrompt(prompt: string, workingData: WorkingData,
     progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<string> {
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(workingData.apiKey);
@@ -159,3 +156,17 @@ async function generateMessageFromPrompt(prompt: string, workingData: WorkingDat
     const message = result.response.text().trim();
     return message;
 }
+
+/**
+ * Gets the diff of staged changes.
+ * @param {SimpleGit} git - The SimpleGit instance.
+ * @returns {Promise<string>} The diff of staged changes.
+ */
+async function getDiff(git: SimpleGit): Promise<string> {
+    const diff: string = await git.diff(['--cached', 'HEAD']);
+    if (!diff.trim()) {
+        vscode.window.showErrorMessage("No staged changes detected");
+    }
+    return diff;
+}
+
