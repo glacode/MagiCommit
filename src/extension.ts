@@ -9,8 +9,9 @@ ${diff.substring(0, maxDiffLength)}
 Recent commits:
 ${log.substring(0, maxLogLength)}
 
-Commit message format:"type(scope): description" (50 chars max summary)
-Common types: feat, fix, docs, style, refactor, test, chore`;
+Commit message format:"type(scope): description"
+Common types: feat, fix, docs, style, refactor, test, chore
+Write summary and details`;
     return prompt;
 }
 
@@ -57,48 +58,47 @@ export async function activate(context: vscode.ExtensionContext) {
                 cancellable: false
             }, async (progress) => {
                 // Verify Git repository
-                const isRepo = await git.checkIsRepo();
-                if (!isRepo) {
-                    throw new Error("Not a Git repository");
+                if (await isGitRepo(git)) {
+
+                    // Get staged changes
+                    const diff = await git.diff(['--cached', 'HEAD']);
+                    if (!diff.trim()) {
+                        throw new Error("No staged changes detected");
+                    }
+
+                    // Get recent commit history
+                    const log = (await git.log({ n: 5 })).all.map(c => c.message).join('\n');
+
+                    // Get API configuration
+                    const config = vscode.workspace.getConfiguration('magicommit');
+                    const apiKey = config.get<string>('geminiApiKey');
+                    if (!apiKey) {
+                        throw new Error("Missing Gemini API key in settings");
+                    }
+                    const maxDiffLength: number = config.get<number>('maxDiffLength') || 3000;
+                    const maxLogLength: number = config.get<number>('maxLogLength') || 3000;
+
+                    // Initialize Gemini AI
+                    const genAI = new GoogleGenerativeAI(apiKey);
+                    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+                    // Build prompt
+                    const prompt = buildPrompt(diff, log, maxDiffLength, maxLogLength);
+                    // const prompt = `Explain probability in 30 words.`;
+                    console.log(prompt);
+
+                    // Generate commit message
+                    progress.report({ message: "Consulting the AI spirits..." });
+                    const result = await model.generateContent(prompt);
+                    const message = result.response.text().trim();
+                    // const message = "test"; // Placeholder for actual AI response
+
+                    // Insert into commit input
+                    await setCommitMessage(message);
+                    console.log("\nGenerated commit message:", message);
+
+                    vscode.window.showInformationMessage('✨ Commit message generated!');
                 }
-
-                // Get staged changes
-                const diff = await git.diff(['--cached', 'HEAD']);
-                if (!diff.trim()) {
-                    throw new Error("No staged changes detected");
-                }
-
-                // Get recent commit history
-                const log = (await git.log({ n: 5 })).all.map(c => c.message).join('\n');
-
-                // Get API configuration
-                const config = vscode.workspace.getConfiguration('magicommit');
-                const apiKey = config.get<string>('geminiApiKey');
-                if (!apiKey) {
-                    throw new Error("Missing Gemini API key in settings");
-                }
-                const maxDiffLength: number = config.get<number>('maxDiffLength') || 3000;
-                const maxLogLength: number = config.get<number>('maxLogLength') || 3000;
-
-                // Initialize Gemini AI
-                const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-                // Build prompt
-                const prompt = buildPrompt(diff, log, maxDiffLength, maxLogLength);
-                // const prompt = `Explain probability in 30 words.`;
-                console.log(prompt);
-
-                // Generate commit message
-                progress.report({ message: "Consulting the AI spirits..." });
-                const result = await model.generateContent(prompt);
-                const message = result.response.text().trim();
-                // const message = "test"; // Placeholder for actual AI response
-
-                // Insert into commit input
-                await setCommitMessage(message);
-
-                vscode.window.showInformationMessage('✨ Commit message generated!');
             });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -106,6 +106,14 @@ export async function activate(context: vscode.ExtensionContext) {
             console.error('MagiCommit error:', error);
         }
     });
+
+    async function isGitRepo(git: SimpleGit) {
+        const isRepo = await git.checkIsRepo();
+        if (!isRepo) {
+            vscode.window.showErrorMessage("Not a Git repository");
+        }
+        return isRepo;
+    }
 
     context.subscriptions.push(generateCommitMessage);
 }
