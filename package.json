@@ -4,7 +4,7 @@
   "description": "AI based commit message generator",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/magicommit.git"
+    "url": "https://github.com/glacode/magicommit.git"
   },
   "icon": "resources/mage-hat.png",
   "version": "0.0.1",
