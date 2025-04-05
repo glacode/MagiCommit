@@ -1,7 +1,7 @@
 <div align="center">
   <img src="resources/mage-hat.png" width="128" alt="MagiCommit Logo">
   <h1>MagiCommit</h1>
-  <p>🧙 MagiCommit - AI-Powered Commit Messages </p>
+  <p>🧙 AI-Powered Commit Messages </p>
 </div>
 
 [![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/glacode.magicommit?label=Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=glacode.magicommit)
@@ -11,7 +11,7 @@ Generate meaningful Git commit messages using Google's Gemini AI directly in VSC
 
 ## ✨ Features
 - Automatically analyzes `git diff --cached`
-- Considers last 5 commits for context
+- Considers last commits for context
 - One-click insertion into commit box
 - Configurable AI temperature
 
@@ -22,7 +22,9 @@ Generate meaningful Git commit messages using Google's Gemini AI directly in VSC
 ```json
 "magicommit.geminiApiKey": "your-key-here"
 ```
-4. Click 🪄 in SCM view
+4. Click the magic wand icon in the SCM view:
+   - ![Light Theme Icon](resources/light/wand.svg) (Light Theme)
+   - ![Dark Theme Icon](resources/dark/wand.svg) (Dark Theme)
 
 ## 🛠 Development
 ```bash
