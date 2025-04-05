@@ -23,8 +23,8 @@ Generate meaningful Git commit messages using Google's Gemini AI directly in VSC
 "magicommit.geminiApiKey": "your-key-here"
 ```
 4. Click the magic wand icon in the SCM view:
-   - <img src="resources/light/wand.svg" width="64" alt="MagiCommit Logo"> (Light Theme)
-   - <img src="resources/dark/wand.svg" width="64" alt="MagiCommit Logo"> (Dark Theme)
+   - <img src="resources/light/wand.svg" width="16" alt="MagiCommit Logo"> (Light Theme)
+   - <img src="resources/dark/wand.svg" width="16" alt="MagiCommit Logo"> (Dark Theme)
 
 ## 🛠 Development
 ```bash
