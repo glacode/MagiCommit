@@ -9,6 +9,7 @@ import { get } from 'http';
 interface WorkingData {
     workSpaceFolder: vscode.WorkspaceFolder | undefined;
     isGitRepo: boolean;
+    modelName: string;
     temperature: number;
     diff: string;
     log: string;
@@ -31,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 const workingData: WorkingData = await getWorkingData();
                 if (workingData.isGitRepo && workingData.apiKey.length > 0) {
                     const prompt = buildPrompt(workingData.diff, workingData.log, workingData.maxDiffLength, workingData.maxLogLength);
-                    console.log(prompt);
+                    console.log(`Model:'${workingData.modelName}'\n\nPrompt:\n${prompt}`);
                     const message: string = await generateCommitMessageFromPrompt(prompt, workingData, progress);
                     // const message = "test";
 
@@ -66,6 +67,8 @@ async function getWorkingData(): Promise<WorkingData> {
 
     const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('magicommit');
 
+    const model: string = await getModelName(config);
+
     const log = await getLog(git, config);
 
     const maxDiffLength: number = config.get<number>('maxDiffLength') || 3000;
@@ -79,6 +82,7 @@ async function getWorkingData(): Promise<WorkingData> {
 
     return {
         workSpaceFolder: workspaceFolder,
+        modelName: model,
         isGitRepo: isGitRepo,
         temperature: temperature,
         diff: diff.trim(),
@@ -87,6 +91,18 @@ async function getWorkingData(): Promise<WorkingData> {
         maxLogLength,
         apiKey
     };
+}
+
+/**
+ * Gets the model name from the configuration. Example: 'gemini-2.0-flash'.
+ * @param {vscode.WorkspaceConfiguration} config - The workspace configuration.
+ * @returns {string} The model name.
+ */
+async function getModelName(config: vscode.WorkspaceConfiguration): Promise<string> {
+  const customModel = config.get<string>('customModel')?.trim();
+  // Get model - custom takes precedence
+  const model = customModel || config.get<string>('model') || 'gemini-2.0-flash';
+  return model;
 }
 
 /**
@@ -171,7 +187,8 @@ function getGenerativeModel(workingData: WorkingData): GenerativeModel {
     const genAI: GoogleGenerativeAI = new GoogleGenerativeAI(workingData.apiKey);
     const model: GenerativeModel = genAI.getGenerativeModel(
         {
-            model: 'gemini-2.0-flash',
+            // model: 'gemini-2.0-flash',
+            model: workingData.modelName,
             generationConfig: {
                 temperature: workingData.temperature
             }

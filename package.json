@@ -53,25 +53,54 @@
           "type": "string",
           "default": "",
           "description": "Your Google Gemini API key (get it from https://ai.google.dev/)",
-          "scope": "application"
+          "scope": "application",
+          "order": 1
+        },
+        "magicommit.model": {
+          "type": "string",
+          "default": "gemini-2.0-flash",
+          "enum": [
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-2.0-flash",
+            "Other"
+          ],
+          "enumDescriptions": [
+            "Fast and versatile performance across a diverse variety of tasks",
+            "Complex reasoning tasks requiring more intelligence",
+            "Next generation features, speed, thinking, realtime streaming, and multimodal generation",
+            "Custom model name (insert below in the text box)"
+          ],
+          "description": "Gemini model to use for commit generation",
+          "order": 2
+        },
+        "magicommit.customModel": {
+          "type": "string",
+          "default": "",
+          "description": "Custom model name (overrides 'Model' if specified above)",
+          "when": "magicommit.model == 'Other'",
+          "order": 3
         },
         "magicommit.maxDiffLength": {
           "type": "number",
           "default": 3000,
           "description": "Maximum characters of git diff to send to Gemini",
-          "scope": "window"
+          "scope": "window",
+          "order": 4
         },
         "magicommit.maxLogLength": {
           "type": "number",
           "default": 3000,
           "description": "Maximum characters of git log to send to Gemini",
-          "scope": "window"
+          "scope": "window",
+          "order": 5
         },
         "magicommit.numberOfLogItems": {
           "type": "number",
           "default": 5,
           "description": "Number of git log items to send to Gemini",
-          "scope": "window"
+          "scope": "window",
+          "order": 6
         },
         "magicommit.temperature": {
           "type": "number",
@@ -79,7 +108,8 @@
           "minimum": 0.0,
           "maximum": 2.0,
           "description": "Controls randomness (0=strict, 2=creative)",
-          "scope": "window"
+          "scope": "window",
+          "order": 7
         }
       }
     }
