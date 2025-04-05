@@ -72,6 +72,14 @@
           "default": 5,
           "description": "Number of git log items to send to Gemini",
           "scope": "window"
+        },
+        "magicommit.temperature": {
+          "type": "number",
+          "default": 0.9,
+          "minimum": 0.0,
+          "maximum": 2.0,
+          "description": "Controls randomness (0=strict, 2=creative)",
+          "scope": "window"
         }
       }
     }

@@ -1,13 +1,15 @@
 import * as vscode from 'vscode';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import simpleGit, { DefaultLogFields, ListLogLine, SimpleGit } from 'simple-git';
 import { Init } from 'v8';
+import { get } from 'http';
 
 
 
 interface WorkingData {
     workSpaceFolder: vscode.WorkspaceFolder | undefined;
     isGitRepo: boolean;
+    temperature: number;
     diff: string;
     log: string;
     maxDiffLength: number;
@@ -73,10 +75,12 @@ async function getWorkingData(): Promise<WorkingData> {
     if (!apiKey) {
         vscode.window.showErrorMessage("Missing Gemini API key in settings");
     }
+    const temperature: number = config.get<number>('temperature') || 0.3;
 
     return {
         workSpaceFolder: workspaceFolder,
         isGitRepo: isGitRepo,
+        temperature: temperature,
         diff: diff.trim(),
         log: log,
         maxDiffLength,
@@ -151,13 +155,29 @@ Write summary and details`;
 
 async function generateCommitMessageFromPrompt(prompt: string, workingData: WorkingData,
     progress: vscode.Progress<{ message?: string; increment?: number }>): Promise<string> {
-    // Initialize Gemini AI
-    const genAI = new GoogleGenerativeAI(workingData.apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const generativeModel: GenerativeModel = getGenerativeModel(workingData);
     progress.report({ message: "Consulting the AI spirits..." });
-    const result = await model.generateContent(prompt);
+    const result = await generativeModel.generateContent(prompt);
     const message = result.response.text().trim();
     return message;
+}
+
+/**
+ * Gets the Generative Model instance.
+ * @param {WorkingData} workingData - The working data.
+ * @returns {GenerativeModel} The Generative Model instance.
+ */
+function getGenerativeModel(workingData: WorkingData): GenerativeModel {
+    const genAI: GoogleGenerativeAI = new GoogleGenerativeAI(workingData.apiKey);
+    const model: GenerativeModel = genAI.getGenerativeModel(
+        {
+            model: 'gemini-2.0-flash',
+            generationConfig: {
+                temperature: workingData.temperature
+            }
+        }
+    );
+    return model;
 }
 
 /**
