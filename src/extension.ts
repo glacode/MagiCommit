@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import simpleGit, { SimpleGit } from 'simple-git';
+import simpleGit, { DefaultLogFields, ListLogLine, SimpleGit } from 'simple-git';
 import { Init } from 'v8';
 
 
@@ -14,20 +14,12 @@ interface WorkingData {
     maxLogLength: number;
     apiKey: string;
 }
-
-
-
-
-
+/**
+ * This method is called when your extension is activated.
+ */
 export async function activate(context: vscode.ExtensionContext) {
     const generateCommitMessage = vscode.commands.registerCommand('magicommit.generate', async () => {
         try {
-            // Get workspace path
-            // const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            // if (!workspaceFolder) {
-            //     vscode.window.showErrorMessage("No workspace folder open");
-            //     return;
-            // }
 
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
@@ -70,10 +62,9 @@ async function getWorkingData(): Promise<WorkingData> {
 
     const diff: string = await getDiff(git);
 
-    const config = vscode.workspace.getConfiguration('magicommit');
+    const config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('magicommit');
 
-    const numberOfLogItems: number = config.get<number>('numberOfLogItems') || 5;
-    const log = (await git.log({ n: numberOfLogItems })).all.map(c => c.message).join('\n');
+    const log = await getLog(git, config);
 
     const maxDiffLength: number = config.get<number>('maxDiffLength') || 3000;
     const maxLogLength: number = config.get<number>('maxLogLength') || 3000;
@@ -92,6 +83,18 @@ async function getWorkingData(): Promise<WorkingData> {
         maxLogLength,
         apiKey
     };
+}
+
+/**
+ * Gets the recent commit log.
+ * @param {SimpleGit} git - The SimpleGit instance.
+ * @returns {string} The recent commit log.
+ */
+async function getLog(git: SimpleGit, config: vscode.WorkspaceConfiguration): Promise<string> {
+    const numberOfLogItems: number = config.get<number>('numberOfLogItems') || 5;
+    const log = (await git.log({ n: numberOfLogItems })).all.map((c: DefaultLogFields & ListLogLine) =>
+        `${c.message}\n${c.body}`).join('\n');
+    return log;
 }
 
 async function isGitRepository(git: SimpleGit): Promise<boolean> {
@@ -140,7 +143,7 @@ ${diff.substring(0, maxDiffLength)}
 Recent commits:
 ${log.substring(0, maxLogLength)}
 
-Commit message format:"type(scope): description"
+Commit message format (NO CODEBLOCKS):"type(scope): description"
 Common types: feat, fix, docs, style, refactor, test, chore
 Write summary and details`;
     return prompt;
