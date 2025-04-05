@@ -5,7 +5,7 @@
 </div>
 
 [![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/glacode.magicommit?label=Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=glacode.magicommit)
-[![License](https://img.shields.io/github/license/glacode/MagiCommit)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Generate meaningful Git commit messages using Google's Gemini AI directly in VSCode.
 
