@@ -1,4 +1,8 @@
-# 🪄 MagiCommit - AI-Powered Commit Messages
+<div align="center">
+  <img src="resources/mage-hat.png" width="128" alt="MagiCommit Logo">
+  <h1>MagiCommit</h1>
+  <p>🧙 MagiCommit - AI-Powered Commit Messages </p>
+</div>
 
 [![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/glacode.magicommit?label=Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=glacode.magicommit)
 [![License](https://img.shields.io/github/license/glacode/MagiCommit)](LICENSE)
