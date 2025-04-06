@@ -8,7 +8,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Generate meaningful Git commit messages using Google's Gemini AI directly in VSCode.
-(resources/demo.gif)
+
+![Demo GIF](resources/demo.gif)
 
 ## ✨ Features
 - Automatically analyzes `git diff --cached`
